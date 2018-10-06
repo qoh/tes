@@ -4,7 +4,7 @@ import { collectAsync } from "https://cdn.rawgit.com/qoh/utility/v0.0.1/src/iter
 import { runTests } from "./run";
 import { displayResults } from "./display";
 
-export async function main() {
+async function main() {
 	const { entryPath } = parseArgs();
 
 	console.log("Finding tests");
@@ -35,3 +35,5 @@ function parseArgs() {
 		entryPath,
 	};
 }
+
+main();
