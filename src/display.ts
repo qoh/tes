@@ -1,6 +1,5 @@
 import { TestResult } from "./run";
 import { prefixLines } from "https://cdn.rawgit.com/qoh/utility/v0.0.1/src/string.ts";
-import { AssertEqualsError } from "https://cdn.rawgit.com/qoh/assert/v0.0.1/src/index.ts";
 
 export interface Stats {
 	successCount: number,
@@ -53,14 +52,19 @@ export function displayResults(results: TestResult[]): Stats {
 }
 
 function getErrorString(error: any): string {
-	if (error instanceof AssertEqualsError) {
-		// TODO: Inspect these values in a nice way
-		const actual = JSON.stringify(error.actual);
-		const expected = JSON.stringify(error.expected);
-		return `Actual:   ${actual}\nExpected: ${expected}\n${error.stack}`;
-	}
-
 	if (error instanceof Error) {
+		if (
+			typeof error.constructor === 'function' &&
+			error.constructor.name === 'AssertEqualsError' &&
+			(<any>error).actual !== undefined &&
+			(<any>error).expected !== undefined
+		) {
+			// TODO: Inspect these values in a nice way
+			const actual = JSON.stringify((<any>error).actual);
+			const expected = JSON.stringify((<any>error).expected);
+			return `Actual:   ${actual}\nExpected: ${expected}\n${error.stack}`;
+		}
+
 		return error.stack;
 	}
 
