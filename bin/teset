@@ -1,0 +1,2 @@
+#!/bin/sh
+exec deno "`dirname $0`/../src/main" $@
