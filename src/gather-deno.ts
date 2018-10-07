@@ -1,12 +1,16 @@
 import { stat, readDir, ErrorKind } from "deno";
-import { getTests as getTestsBase } from "./gather";
-import { Test } from "./interfaces";
+import { getTestsFromModule } from "./gather";
+import { TestModule } from "./interfaces";
 
-export async function* getTests(path: string): AsyncIterableIterator<Test> {
+export async function* getTests(path: string): AsyncIterableIterator<TestModule> {
 	if (await isLocalDirectory(path)) {
 		yield* getTestsFromLocalDirectory(path);
 	} else {
-		yield* getTestsBase(path);
+		const testModule = await getTestsFromModule(path);
+
+		if (testModule !== undefined) {
+			yield testModule;
+		}
 	}
 }
 

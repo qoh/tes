@@ -1,19 +1,23 @@
 import { args, exit } from "deno";
 import { getTests } from "./gather-deno";
 import { collectAsync } from "https://cdn.rawgit.com/qoh/utility/v0.0.1/src/iterable.ts";
-import { runTests } from "./run";
+import { runTestModules } from "./run";
 import { displayResults } from "./display";
 
 async function main() {
 	const { entryPath } = parseArgs();
 
 	console.log("Finding tests");
-	const tests = await collectAsync(getTests(entryPath));
-	console.log(`Found ${tests.length} tests, running`);
-	const results = await runTests(tests);
+	const testModules = await collectAsync(getTests(entryPath));
+	const testCount = testModules
+		.map(module => module.functions.length)
+		.reduce((a, b) => a + b, 0);
+	console.log(`Found ${testCount} tests, running`);
+	const results = await runTestModules(testModules);
 	console.log();
 
-	const { failureCount } = displayResults(results);
+	const { successCount, failureCount } = displayResults(results);
+	console.log(`${successCount}/${testCount} succeeded, ${failureCount} failed`);
 
 	if (failureCount > 0) {
 		exit(1);
@@ -31,9 +35,7 @@ function parseArgs() {
 	// TODO: If entryPath is local and not absolute, it will be relative to
 	// the directory of `gather.ts`, rather than the current working directory.
 
-	return {
-		entryPath,
-	};
+	return { entryPath };
 }
 
 main();

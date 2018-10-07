@@ -1,4 +1,4 @@
-import { TestResult } from "./run";
+import { TestModuleResult } from "./run";
 import { prefixLines } from "https://cdn.rawgit.com/qoh/utility/v0.0.1/src/string.ts";
 
 export interface Stats {
@@ -6,47 +6,58 @@ export interface Stats {
 	failureCount: number,
 }
 
-/**
- * @returns Number of tests that failed.
- */
-export function displayResults(results: TestResult[]): Stats {
+export function displayResults(results: TestModuleResult[]): Stats {
 	let successCount = 0;
 	let failureCount = 0;
 
-	let lastFailed = false;
-
 	for (const result of results) {
-		const { test: { sourceModulePath, identifierChain }, milliseconds } = result;
-		const identifier = identifierChain.join(".");
+		const innerStats = displayModuleResults(result);
+		successCount += innerStats.successCount;
+		failureCount += innerStats.failureCount;
+	}
+
+	return { successCount, failureCount };
+}
+
+function displayModuleResults(moduleResult: TestModuleResult): Stats {
+	console.log(`${moduleResult.testModule.path} [${moduleResult.milliseconds}ms]`);
+	console.log();
+
+	let successCount = 0;
+	let failureCount = 0;
+
+	let extraLine = true;
+
+	for (const result of moduleResult.results) {
+		const { testFunction: { propertyPath }, milliseconds } = result;
+		const identifier = propertyPath.join(".");
 
 		if (result.outcome === "failure") {
 			// ✗
 			// ❌
 
-			if (!lastFailed) {
-				console.error();
+			if (!extraLine) {
+				console.log();
 			}
 
-			console.error(` ❌  ${identifier} in ${sourceModulePath} [${milliseconds}ms]`);
-			console.error(prefixLines("    ", getErrorString(result.error)));
-			console.error();
+			console.log(` ❌  ${identifier} [${milliseconds}ms]`);
+			console.log(prefixLines("    ", getErrorString(result.error)));
+			console.log();
 
 			failureCount++;
 		} else {
 			// ✅
 			// ✓
-			console.log(` ✅  ${identifier} in ${sourceModulePath} [${milliseconds}ms]`);
+			console.log(` ✅  ${identifier} [${milliseconds}ms]`);
 			successCount++;
 		}
 
-		lastFailed = result.outcome === "failure";
+		extraLine = result.outcome === "failure";
 	}
 
-	if (!lastFailed) {
+	if (!extraLine) {
 		console.log();
 	}
-
-	console.log(`${successCount}/${results.length} succeeded, ${failureCount} failed`);
 
 	return { successCount, failureCount };
 }

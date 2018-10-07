@@ -1,35 +1,53 @@
-import { Test } from "./interfaces";
+import { TestModule, TestFunction } from "./interfaces";
 
-export type TestResult = TestSuccess | TestFailure;
+export interface TestModuleResult {
+	testModule: TestModule;
+	milliseconds: number;
+	results: TestFunctionResult[];
+}
+
+export type TestFunctionResult = TestSuccess | TestFailure;
 
 interface TestResultBase {
-	test: Test;
+	testFunction: TestFunction;
 	milliseconds: number;
 }
 
 export interface TestSuccess extends TestResultBase {
-	outcome: 'success';
+	outcome: "success";
 }
 
 export interface TestFailure extends TestResultBase {
-	outcome: 'failure';
+	outcome: "failure";
 	error: any;
 }
 
-export async function runTests(tests: Test[]): Promise<TestResult[]> {
-	return Promise.all(tests.map(runTest));
+export async function runTestModules(testModules: TestModule[]): Promise<TestModuleResult[]> {
+	return await Promise.all(testModules.map(runTestModule));
 }
 
-export async function runTest(test: Test): Promise<TestResult> {
+export async function runTestModule(testModule: TestModule): Promise<TestModuleResult> {
+	const start = Date.now();
+	const results = await Promise.all(testModule.functions.map(runTestFunction));
+	const milliseconds = Date.now() - start;
+
+	return {
+		testModule,
+		milliseconds,
+		results,
+	};
+}
+
+export async function runTestFunction(testFunction: TestFunction): Promise<TestFunctionResult> {
 	const start = Date.now();
 
 	try {
-		await test.function();
+		await testFunction.fn();
 	} catch (error) {
 		const milliseconds = Date.now() - start;
-		return { test, milliseconds, error, outcome: 'failure' };
+		return { testFunction, milliseconds, error, outcome: "failure" };
 	}
 
 	const milliseconds = Date.now() - start;
-	return { test, milliseconds, outcome: 'success' };
+	return { testFunction, milliseconds, outcome: "success" };
 }

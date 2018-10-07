@@ -1,28 +1,31 @@
-import { Test } from "./interfaces";
+import { TestModule, TestFunction } from "./interfaces";
 
-export async function* getTests(
-	sourceModulePath: string,
-): AsyncIterableIterator<Test> {
-	const module = await import(sourceModulePath);
+export async function getTestsFromModule(
+	path: string,
+): Promise<TestModule | undefined> {
+	const module = await import(path);
 
 	if (typeof module === 'object') {
-		yield* getTestsFromObject(module, sourceModulePath, []);
+		return {
+			path: path,
+			functions: Array.from(
+				getTestsFromObject(module, [])),
+		};
 	}
 }
 
 export function* getTestsFromObject(
-	object, sourceModulePath, identifierChain,
-): IterableIterator<Test> {
+	object, propertyPath,
+): IterableIterator<TestFunction> {
 	for (const [key, value] of Object.entries(object)) {
 		if (typeof value === 'function') {
 			yield {
-				sourceModulePath,
-				identifierChain: identifierChain.concat(key),
-				function: value,
+				propertyPath: propertyPath.concat(key),
+				fn: value,
 			};
 		} else if (typeof value === 'object') {
-			yield* getTestsFromObject(value, sourceModulePath,
-				identifierChain.concat(key));
+			yield* getTestsFromObject(value,
+				propertyPath.concat(key));
 		}
 	}
 }
