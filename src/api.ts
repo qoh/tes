@@ -1,15 +1,13 @@
-import { assert, assertEquals } from "https://cdn.rawgit.com/qoh/assert/v0.1.1/src/index.ts";
+import { assertEquals } from "https://cdn.rawgit.com/qoh/assert/v0.1.1/src/index.ts";
 
-type Test = () => any;
-
-export function throws(test: Test): Test;
-export function throws(constructor: Function, test: Test): Test;
-export function throws(message: string, test: Test): Test;
-export function throws(constructor: Function, message: string, test: Test): Test;
-export function throws(a: Test | Function | string, b?: Test | string, c?: Test): () => any {
+export function throws(test: Function): () => Promise<void>;
+export function throws(constructor: Function, test: Function): () => Promise<void>;
+export function throws(message: string, test: Function): () => Promise<any>;
+export function throws(constructor: Function, message: string, test: Function): () => Promise<any>;
+export function throws(a: Function | string, b?: Function | string, c?: Function): () => Promise<any> {
 	let constructor: Function | undefined;
 	let message: string | undefined;
-	let test: Test;
+	let test: Function;
 
 	// TODO: Consider stricter runtime type-checking here
 	if (c !== undefined) {
@@ -18,19 +16,19 @@ export function throws(a: Test | Function | string, b?: Test | string, c?: Test)
 		test = c;
 	} else if (b !== undefined) {
 		if (typeof a === "string") {
-			message = a as string;
+			message = a;
 		} else {
-			constructor = a as Function;
+			constructor = a;
 		}
 
-		test = b as Test;
+		test = b as Function;
 	} else {
-		test = a as Test;
+		test = a as Function;
 	}
 
-	return () => {
+	return async () => {
 		try {
-			test();
+			await test();
 		} catch (error) {
 			if (constructor !== undefined) {
 				assertEquals(typeof error, "object", "Expected test to throw an object");
