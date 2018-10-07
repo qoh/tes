@@ -1,8 +1,22 @@
 import { assertEquals } from "https://cdn.rawgit.com/qoh/assert/v0.1.1/src/index.ts";
 
+/**
+ * Create a test that expects `test` to throw.
+ */
 export function throws(test: Function): () => Promise<void>;
+/**
+ * Create a test that expects `test` to throw an instance of `constructor`.
+ */
 export function throws(constructor: Function, test: Function): () => Promise<void>;
+/**
+ * Create a test that expects `test` to throw an instance of `Error`,
+ * with a message equal to `message`.
+ */
 export function throws(message: string, test: Function): () => Promise<any>;
+/**
+ * Create a test that expects `test` to throw an instance of `constructor`,
+ * with a message property equal to `message`.
+ */
 export function throws(constructor: Function, message: string, test: Function): () => Promise<any>;
 export function throws(a: Function | string, b?: Function | string, c?: Function): () => Promise<any> {
 	let constructor: Function | undefined;
@@ -16,6 +30,7 @@ export function throws(a: Function | string, b?: Function | string, c?: Function
 		test = c;
 	} else if (b !== undefined) {
 		if (typeof a === "string") {
+			constructor = Error;
 			message = a;
 		} else {
 			constructor = a;

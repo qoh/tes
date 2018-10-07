@@ -1,5 +1,5 @@
-export function ok() {
-	// all good
+export async function ok() {
+	// all good, your tests may be async
 }
 
 export function fail() {
