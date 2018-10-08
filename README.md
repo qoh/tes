@@ -1,6 +1,6 @@
 # Summary
 
-Teset (pronounced Tessie) is a test runner for [deno](https://github.com/denoland/deno), based on the simple concept of exporting tests as functions and throwing to indicate failure.
+Teset (pronounced Tessie) is a test runner for [deno](https://github.com/denoland/deno) based on simple concepts: exporting tests as functions (potentially nested or async), and throwing to indicate failure.
 
 Write a test file like `example.ts`:
 
@@ -63,8 +63,6 @@ deno https://cdn.rawgit.com/qoh/teset/v0.2.0/src/main example
 
 # Test API
 
-This is the additional API available for use in implementing tests.
-
 For assertions, see [assert](https://github.com/qoh/assert).
 
 ```javascript
@@ -76,8 +74,8 @@ import { ... } from "https://cdn.rawgit.com/qoh/teset/v0.2.0/src/api.ts";
 ```typescript
 function throws(test: Function): () => Promise<void>;
 function throws(constructor: Function, test: Function): () => Promise<void>;
-function throws(message: string, test: Function): () => Promise<any>;
-function throws(constructor: Function, message: string, test: Function): () => Promise<any>;
+function throws(message: string, test: Function): () => Promise<void>;
+function throws(constructor: Function, message: string, test: Function): () => Promise<void>;
 ```
 
 Create a test that expects `test` to throw.
