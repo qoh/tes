@@ -51,14 +51,14 @@ Found 4 tests, running
 You can try this right now without installing if you have deno:
 
 ```shell
-deno https://cdn.rawgit.com/qoh/teset/v0.2.0/src/main.ts \
-     https://cdn.rawgit.com/qoh/teset/v0.2.0/example/example.ts
+deno https://cdn.rawgit.com/qoh/teset/v0.2.1/src/main.ts \
+     https://cdn.rawgit.com/qoh/teset/v0.2.1/example/example.ts
 ```
 
 Or with a local file:
 
 ```shell
-deno https://cdn.rawgit.com/qoh/teset/v0.2.0/src/main.ts example.ts
+deno https://cdn.rawgit.com/qoh/teset/v0.2.1/src/main.ts example.ts
 ```
 
 # Test API
@@ -66,7 +66,7 @@ deno https://cdn.rawgit.com/qoh/teset/v0.2.0/src/main.ts example.ts
 For assertions, see [assert](https://github.com/qoh/assert).
 
 ```javascript
-import { ... } from "https://cdn.rawgit.com/qoh/teset/v0.2.0/src/api.ts";
+import { ... } from "https://cdn.rawgit.com/qoh/teset/v0.2.1/src/api.ts";
 ```
 
 ---
