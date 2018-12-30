@@ -1,19 +1,19 @@
 import { assertEquals } from "https://cdn.rawgit.com/qoh/assert/v0.0.1/src/index.ts";
-import { runTest, runTests } from "../src/run";
-import { Test } from "../src/interfaces";
+import { runTestFunction } from "../src/run.ts";
+import { TestFunction } from "../src/interfaces.ts";
 
 // TODO: Test runTests
 
 export function syncSuccess() {
 	expectResult(
-		functionToTest(() => { }),
+		makeTestFunction(() => { }),
 		{ outcome: "success" },
 	);
 }
 
 export async function asyncSuccess() {
 	await expectResult(
-		functionToTest(async () => { }),
+		makeTestFunction(async () => { }),
 		{ outcome: "success" },
 	);
 }
@@ -21,20 +21,18 @@ export async function asyncSuccess() {
 export function syncFailure() {
 	const error = {};
 	expectResult(
-		functionToTest(() => { throw error; }),
+		makeTestFunction(() => { throw error; }),
 		{ outcome: "failure", error },
 	);
 }
 
-// FIXME: This `throw error;` in this test inexplicably prints "undefined" and
-// terminates the application. I'm assuming this is a deno bug.
-/* export async function asyncFailure() {
+export async function asyncFailure() {
 	const error = {};
 	await expectResult(
-		functionToTest(async () => { throw error; }),
+		makeTestFunction(async () => { throw error; }),
 		{ outcome: "failure", error },
 	);
-} */
+}
 
 type Expected = ExpectedSuccess | ExpectedFailure;
 
@@ -47,9 +45,9 @@ interface ExpectedFailure {
 	error: any;
 }
 
-async function expectResult(test: Test, expected: Expected) {
-	const actual = await runTest(test);
-	const base = { test, milliseconds: actual.milliseconds, };
+async function expectResult(testFunction: TestFunction, expected: Expected) {
+	const actual = await runTestFunction(testFunction);
+	const base = { testFunction, milliseconds: actual.milliseconds };
 
 	if (expected.outcome === "success") {
 		assertEquals(actual, { ...base, outcome: "success" });
@@ -58,10 +56,9 @@ async function expectResult(test: Test, expected: Expected) {
 	}
 }
 
-function functionToTest(f: () => any): Test {
+function makeTestFunction(fn: () => any): TestFunction {
 	return {
-		sourceModulePath: "sourceModulePath",
-		identifierChain: ["identifierChain"],
-		function: f,
+		propertyPath: ["functionTest"],
+		fn,
 	};
 }

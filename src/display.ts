@@ -1,4 +1,4 @@
-import { TestModuleResult } from "./run";
+import { TestModuleResult } from "./run.ts";
 import { prefixLines } from "https://cdn.rawgit.com/qoh/utility/v0.0.1/src/string.ts";
 
 export interface Stats {

@@ -1,4 +1,4 @@
-import { TestModule, TestFunction } from "./interfaces";
+import { TestModule, TestFunction } from "./interfaces.ts";
 
 export async function getTestsFromModule(
 	path: string,
