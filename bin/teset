@@ -1,2 +1,2 @@
 #!/bin/sh
-exec deno "`dirname $0`/../src/main.ts" $@
+exec deno run --allow-read "$(dirname $0)/../src/main.ts" -- $@

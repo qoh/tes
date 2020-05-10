@@ -1,34 +1,34 @@
-import { TestModuleResult } from "./run.ts";
+import { ResultAggregator, TestModule, TestFunction, TestModuleResult, TestFunctionResult } from "./interfaces.ts";
 import { prefixLines } from "https://cdn.rawgit.com/qoh/utility/v0.0.1/src/string.ts";
 
-export interface Stats {
-	successCount: number,
-	failureCount: number,
+interface CurrentModuleState {
+	module: TestModule;
+	hasExtraLine: boolean;
 }
 
-export function displayResults(results: TestModuleResult[]): Stats {
-	let successCount = 0;
-	let failureCount = 0;
+export class TerminalDisplayResultAggregator implements ResultAggregator {
+	private currentModuleState: CurrentModuleState | null = null;
 
-	for (const result of results) {
-		const innerStats = displayModuleResults(result);
-		successCount += innerStats.successCount;
-		failureCount += innerStats.failureCount;
+	private successCount = 0;
+	private failureCount = 0;
+
+	private maybeStartModule(mod: TestModule) {
+		if (this.currentModuleState === null) {
+			this.currentModuleState = {
+				module: mod,
+				hasExtraLine: true,
+			};
+
+			console.log(mod.path);
+			console.log();
+		} else if (this.currentModuleState.module !== mod) {
+			throw new Error("Missing moduleFinish call (does not support parallel)");
+		}
 	}
 
-	return { successCount, failureCount };
-}
+	testFinish(mod: TestModule, result: TestFunctionResult) {
+		this.maybeStartModule(mod);
 
-function displayModuleResults(moduleResult: TestModuleResult): Stats {
-	console.log(`${moduleResult.testModule.path} [${moduleResult.milliseconds}ms]`);
-	console.log();
-
-	let successCount = 0;
-	let failureCount = 0;
-
-	let extraLine = true;
-
-	for (const result of moduleResult.results) {
 		const { testFunction: { propertyPath }, milliseconds } = result;
 		const identifier = propertyPath.join(".");
 
@@ -36,30 +36,42 @@ function displayModuleResults(moduleResult: TestModuleResult): Stats {
 			// ✗
 			// ❌
 
-			if (!extraLine) {
+			if (!this.currentModuleState!.hasExtraLine) {
 				console.log();
 			}
 
-			console.log(` ❌  ${identifier} [${milliseconds}ms]`);
-			console.log(prefixLines("    ", getErrorString(result.error)));
+			console.log(`  ❌  ${identifier} [${milliseconds}ms]`);
+			console.log(prefixLines("      ", getErrorString(result.error)));
 			console.log();
 
-			failureCount++;
+			this.failureCount++;
 		} else {
 			// ✅
 			// ✓
-			console.log(` ✅  ${identifier} [${milliseconds}ms]`);
-			successCount++;
+			console.log(`  ✅  ${identifier} [${milliseconds}ms]`);
+			this.successCount++;
 		}
 
-		extraLine = result.outcome === "failure";
+		this.currentModuleState!.hasExtraLine = result.outcome === "failure";
 	}
 
-	if (!extraLine) {
-		console.log();
+	moduleFinish(mod: TestModule, elapsedMilliseconds: number) {
+		this.maybeStartModule(mod);
+
+		if (!this.currentModuleState!.hasExtraLine) {
+			console.log();
+		}
+
+		// console.log(`  [${elapsedMilliseconds}ms]`);
+		// console.log();
+
+		this.currentModuleState = null;
 	}
 
-	return { successCount, failureCount };
+	suiteFinish() {
+		const resultCount = this.successCount + this.failureCount;
+		console.log(`${this.successCount}/${resultCount} succeeded, ${this.failureCount} failed`);
+	}
 }
 
 function getErrorString(error: any): string {
@@ -76,7 +88,7 @@ function getErrorString(error: any): string {
 			return `Actual:   ${actual}\nExpected: ${expected}\n${error.stack}`;
 		}
 
-		return error.stack;
+		return error.stack ?? error.toString();
 	}
 
 	// TODO: Inspect this value in a nice way

@@ -1,16 +1,15 @@
-#!/usr/bin/env deno
-
-import { args, exit, cwd } from "deno";
-import { getTests } from "./gather-deno.ts";
+import { join, resolve } from "https://deno.land/std@0.42.0/path/mod.ts";
+import { getTests } from "./gather.ts";
 import { collectAsync } from "https://cdn.rawgit.com/qoh/utility/v0.0.1/src/iterable.ts";
 import { runTestModules } from "./run.ts";
-import { displayResults } from "./display.ts";
+import { TerminalDisplayResultAggregator } from "./display.ts";
+import { ErrorDetectAggregator, MultipleAggregator, SerialAggregator } from "./aggregator.ts";
 import { isLocalDirectory } from "./misc.ts";
 
 export async function main() {
 	const { entryPath } = await parseArgs();
 
-	console.log("Finding tests");
+	console.log("Running tests from", entryPath);
 
 	const testModules = await collectAsync(getTests(entryPath));
 	const testCount = testModules
@@ -23,22 +22,26 @@ export async function main() {
 	}
 
 	console.log(`Found ${testCount} tests, running`);
-	const results = await runTestModules(testModules);
-	console.log();
 
-	const { successCount, failureCount } = displayResults(results);
-	console.log(`${successCount}/${testCount} succeeded, ${failureCount} failed`);
+	const errorAggregator = new ErrorDetectAggregator;
 
-	if (failureCount > 0) {
-		exit(1);
+	const aggregator = new MultipleAggregator([
+		new SerialAggregator(new TerminalDisplayResultAggregator),
+		errorAggregator,
+	]);
+
+	await runTestModules(aggregator, testModules);
+
+	if (errorAggregator.hasFailure()) {
+		Deno.exit(1);
 	}
 }
 
 async function parseArgs() {
 	let entryPath = null;
 
-	for (let i = 1; i < args.length; i++) {
-		const arg = args[i];
+	for (let i = 1; i < Deno.args.length; i++) {
+		const arg = Deno.args[i];
 
 		if (entryPath !== null) {
 			return usageAndExit();
@@ -49,14 +52,14 @@ async function parseArgs() {
 
 	// If no entry was passed, look for a "test" folder.
 	if (entryPath === null) {
-		entryPath = cwd() + "/test";
+		entryPath = join(Deno.cwd(), "/test");
 
 		if (!await isLocalDirectory(entryPath)) {
 			console.log("Error: No entry passed, and no test folder exists");
 			return usageAndExit();
 		}
-
-		console.log(`Using test folder: ${entryPath}`);
+	} else {
+		entryPath = resolveEntryPath(Deno.cwd(), entryPath);
 	}
 
 	// TODO: If entryPath is local and not absolute, it will be relative to
@@ -65,9 +68,19 @@ async function parseArgs() {
 	return { entryPath };
 }
 
-function usageAndExit() {
-	console.log(`Usage: deno ${args[0]} [entry]`);
-	return exit(1);
+function resolveEntryPath(cwd: string, entryPath: string): string {
+	if (entryPath.match(/https?:\/\//)) {
+		return entryPath;
+	} else {
+		return resolve(cwd, entryPath);
+	}
 }
 
-main();
+function usageAndExit() {
+	console.log(`Usage: deno ${Deno.args[0]} [entry]`);
+	return Deno.exit(1);
+}
+
+if (import.meta.main) {
+	main();
+}
